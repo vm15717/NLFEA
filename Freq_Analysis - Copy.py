@@ -22,6 +22,7 @@ def FreqAnalysis():
     import xyPlot
     import displayGroupOdbToolset as dgo
     import connectorBehavior
+    import csv
     ## profile for extrusion created
     s = mdb.models['Model-1'].ConstrainedSketch(name='__profile__', 
     sheetSize=200.0)
@@ -116,13 +117,20 @@ def FreqAnalysis():
 ##Apply Loading
     mdb.models['Model-1'].StaticStep(name='Step-1', previous='Frequency')
     instanceNodes = mdb.models['Model-1'].rootAssembly.instances['Beam-1'].nodes
-    #nodeLabel = tuple(range(1,100))
-    nodeLabel=[100]
-    meshNodeObj = instanceNodes.sequenceFromLabels(nodeLabel)
-    myRegion = regionToolset.Region(nodes=meshNodeObj)
-    mdb.models['Model-1'].ConcentratedForce(name='Load-2', createStepName='Step-1', 
-       region=myRegion, cf2=100.0, distributionType=UNIFORM, field='', 
-       localCsys=None)
+    #Import Forces
+    file=csv.reader(open('C:\\Users\\tw15036\\OneDrive - University of Bristol\\Documents\\Year 4\\GIP\\myFile2.csv','r'))
+    n=[]
+    for row in file:
+        n.append(row)
+    for i in range(0,len(n)):      
+        #nodeLabel = tuple(range(1,100))
+        nodeLabel=[i]
+        [cf11,cf22,cf33]=map(float,n[i])
+        meshNodeObj = instanceNodes.sequenceFromLabels(nodeLabel)
+        myRegion = regionToolset.Region(nodes=meshNodeObj)
+        mdb.models['Model-1'].ConcentratedForce(name='Load-'+str(i), createStepName='Step-1', 
+           region=myRegion, cf1=cf11, cf2=cf22, cf3=cf33, distributionType=UNIFORM, field='', 
+           localCsys=None)
     ##Viewport
     a = mdb.models['Model-1'].rootAssembly
     a.regenerate()
@@ -137,14 +145,14 @@ def FreqAnalysis():
     session.viewports['Viewport: 1'].assemblyDisplay.meshOptions.setValues(
         meshTechnique=OFF)
 ## Generate matrices
-    mdb.models['Model-1'].keywordBlock.synchVersions(storeNodesAndElements=False)
-    mdb.models['Model-1'].keywordBlock.insert(26, """
-    ** ----------------------------------------------------------------
-    *Step, name=exportmatrix
-    *matrix generate, mass, stiffness
-    *matrix output, mass, stiffness, format=MATRIX INPUT
-    *end step
-    **""")
+##    mdb.models['Model-1'].keywordBlock.synchVersions(storeNodesAndElements=False)
+##    mdb.models['Model-1'].keywordBlock.insert(26, """
+##    ** ----------------------------------------------------------------
+##    *Step, name=exportmatrix
+##    *matrix generate, mass, stiffness
+##    *matrix output, mass, stiffness, format=MATRIX INPUT
+##    *end step
+##    **""")
     ## Run job
     mdb.Job(name='Frequency', model='Model-1', description='Frequency Analysis', 
         type=ANALYSIS, atTime=None, waitMinutes=0, waitHours=0, queue=None, 
